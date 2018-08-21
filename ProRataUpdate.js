@@ -2,7 +2,7 @@
 var timeOutSeconds = 55000; //Set to value slightly less than the timeout configured in the Batch config 
 
 // Uncomment out the following record list definition to run against a subset of records (otherwise the script will process all Building/*/*/* records) 
-var recList = ["UTL-FEE-2018-00043", "UTL-FEE-2018-00044", "UTL-FEE-2018-00038"]//["UTL-FEE-9603269-00", "UTL-FEE-9600015-00", "UTL-FEE-9601007-00", "UTL-FEE-9506012-00", "UTL-FEE-9506553-00", "UTL-FEE-9506437-00", "UTL-FEE-9603633-00", "UTL-FEE-9610165-00", "UTL-FEE-9608965-00", "UTL-FEE-9702004-00", "UTL-FEE-9607538-00", "UTL-FEE-9607566-00", "UTL-FEE-9604386-00", "UTL-FEE-9609728-00", "UTL-FEE-9610881-00", "UTL-FEE-2017-00012", "UTL-FEE-2015-00851", "UTL-FEE-2015-00855", "UTL-FEE-0008395-00"];
+var recList = ["UTL-FEE-2018-00043"];//, "UTL-FEE-2018-00044", "UTL-FEE-2018-00038"]//["UTL-FEE-9603269-00", "UTL-FEE-9600015-00", "UTL-FEE-9601007-00", "UTL-FEE-9506012-00", "UTL-FEE-9506553-00", "UTL-FEE-9506437-00", "UTL-FEE-9603633-00", "UTL-FEE-9610165-00", "UTL-FEE-9608965-00", "UTL-FEE-9702004-00", "UTL-FEE-9607538-00", "UTL-FEE-9607566-00", "UTL-FEE-9604386-00", "UTL-FEE-9609728-00", "UTL-FEE-9610881-00", "UTL-FEE-2017-00012", "UTL-FEE-2015-00851", "UTL-FEE-2015-00855", "UTL-FEE-0008395-00"];
 
 /****************************************************/
 
@@ -169,7 +169,7 @@ function updateProRata4Batch() {
     var olduseAppSpecificGroupName = useAppSpecificGroupName;
     useAppSpecificGroupName = false;
 
-    editAppSpecific("Within Pro Rata Service Area", "Yes");
+    editAppSpecificB("Within Pro Rata Service Area", "Yes");
     var gisBufferArray = getGISBufferInfo("CHESAPEAKE", "Pro Rata Projects - PU", -5, "TYPE", "INITIAL_DEV", "IMPROVID", "REIMBURSE");
 
     var gisProject = null;
@@ -249,6 +249,52 @@ function updateProRata4Batch() {
         logDebug("**WARN Conn Fee Assess no GIS-Projetcs found for capId: " + capId);
     } //single project
 }
+
+function editAppSpecificB(itemName,itemValue)  // optional: itemCap
+{
+	var itemCap = capId;
+	var itemGroup = null;
+	if (arguments.length == 3) itemCap = arguments[2]; // use cap ID specified in args
+   	
+  	if (useAppSpecificGroupName)
+	{
+		if (itemName.indexOf(".") < 0)
+			{ logDebug("**WARNING: (editAppSpecific) requires group name prefix when useAppSpecificGroupName is true") ; return false }
+		
+		
+		itemGroup = itemName.substr(0,itemName.indexOf("."));
+		itemName = itemName.substr(itemName.indexOf(".")+1);
+	}
+   	// change 2/2/2018 - update using: aa.appSpecificInfo.editAppSpecInfoValue(asiField)
+	// to avoid issue when updating a blank custom form via script. It was wiping out the field alias 
+	// and replacing with the field name
+	
+	var asiFieldResult = aa.appSpecificInfo.getByList(itemCap, itemName);
+	if(asiFieldResult.getSuccess()){
+		var asiFieldArray = asiFieldResult.getOutput();
+		if(asiFieldArray.length > 0){
+			var asiField = asiFieldArray[0];
+			if(asiField){
+				var origAsiValue = asiField.getChecklistComment();
+				asiField.setChecklistComment(itemValue);
+	
+				var updateFieldResult = aa.appSpecificInfo.editAppSpecInfoValue(asiField);
+				if(updateFieldResult.getSuccess()){
+					logDebug("Successfully updated custom field: " + itemName + " with value: " + itemValue);
+					if(arguments.length < 3) //If no capId passed update the ASI Array
+					AInfo[itemName] = itemValue; 
+				}else
+				{ logDebug( "WARNING: (editAppSpecific) " + itemName + " was not updated. " + updateFieldResult.getErrorMessage()); }	
+			}
+			else
+			{ logDebug( "WARNING: (editAppSpecific) " + itemName + " was not updated."); }
+		}
+	}
+	else {
+		logDebug("ERROR: (editAppSpecific) " + asiFieldResult.getErrorMessage());
+	}
+} 
+
 
 function elapsed() {
     var thisDate = new Date();
