@@ -1,9 +1,13 @@
 /***************** TESTING **************************/
 var timeOutSeconds = 55000; //Set to value slightly less than the timeout configured in the Batch config 
 
-// Uncomment out the following record list definition to run against a subset of records (otherwise the script will process all Building/*/*/* records) 
-var recList = ["UTL-FEE-2018-00043"];//, "UTL-FEE-2018-00044", "UTL-FEE-2018-00038"]//["UTL-FEE-9603269-00", "UTL-FEE-9600015-00", "UTL-FEE-9601007-00", "UTL-FEE-9506012-00", "UTL-FEE-9506553-00", "UTL-FEE-9506437-00", "UTL-FEE-9603633-00", "UTL-FEE-9610165-00", "UTL-FEE-9608965-00", "UTL-FEE-9702004-00", "UTL-FEE-9607538-00", "UTL-FEE-9607566-00", "UTL-FEE-9604386-00", "UTL-FEE-9609728-00", "UTL-FEE-9610881-00", "UTL-FEE-2017-00012", "UTL-FEE-2015-00851", "UTL-FEE-2015-00855", "UTL-FEE-0008395-00"];
-
+// Uncomment out the following record list definition to run against a subset of records (otherwise the script will process all Building/*/*/* records)
+//povided set 
+//var recList = ["UTL-FEE-9603269-00", "UTL-FEE-9600015-00", "UTL-FEE-9601007-00", "UTL-FEE-9506012-00", "UTL-FEE-9506553-00", "UTL-FEE-9506437-00", "UTL-FEE-9603633-00", "UTL-FEE-9610165-00", "UTL-FEE-9608965-00", "UTL-FEE-9702004-00", "UTL-FEE-9607538-00", "UTL-FEE-9607566-00", "UTL-FEE-9604386-00", "UTL-FEE-9609728-00", "UTL-FEE-9610881-00", "UTL-FEE-2017-00012", "UTL-FEE-2015-00851", "UTL-FEE-2015-00855", "UTL-FEE-0008395-00"];
+//smaller set newer records
+//var recList = ["UTL-FEE-2018-00043", "UTL-FEE-2018-00044", "UTL-FEE-2018-00038"];
+//multiparcel set
+var recList = ["UTL-FEE-2016-00322", "UTL-FEE-2016-00406"];
 /****************************************************/
 
 var userDefinedRecordSubet = (recList.length > 0);
@@ -83,7 +87,7 @@ for (var i in recList) {
     logDebug(altId + br);
 
     if (!matches(cap.getCapStatus(), 'Withdrawn') && AInfo['Within Pro Rata Service Area'] != 'Yes') {
-        var inProx = proximity("CHESAPEAKE", "Pro Rata Projects - PU", -5, "feet");
+        var inProx = proximityB("CHESAPEAKE", "Pro Rata Projects - PU", -5, "feet");
 
         if (inProx) {
             updateProRata4Batch();
@@ -92,9 +96,9 @@ for (var i in recList) {
             notProRata++;
             //not withinRata
             logDebug("**INFO Conn Fee Assess parcel on capId: " + capId + " not within pro rata area");
-            editAppSpecific("Within Pro Rata Service Area", "No");
-            editAppSpecific("Pro Rata Water", "No");
-            editAppSpecific("Pro Rata Sewer", "No");
+            editAppSpecificB("Within Pro Rata Service Area", "No");
+            editAppSpecificB("Pro Rata Water", "No");
+            editAppSpecificB("Pro Rata Sewer", "No");
             //Note: do nothing confirm with agency.
         }
     } else {
@@ -107,7 +111,7 @@ for (var i in recList) {
 
 //outputloop TESTING ONLY
 for (var f in recList) {
-    var thisRec = recList[i];
+    var thisRec = recList[f];
     var capId = (userDefinedRecordSubet) ? aa.cap.getCapID("" + thisRec).getOutput() : thisRec.getCapID();
     var cap = aa.cap.getCap(capId);
     var altId = cap.getSuccess() ? "" + cap.getOutput().getCapModel().getAltID() : null;
@@ -181,14 +185,14 @@ function updateProRata4Batch() {
         gisProject = gisBufferArray[0];
 
         //IMPROVID
-        editAppSpecific("Project Name", gisProject["IMPROVID"]);
+        editAppSpecificB("Project Name", gisProject["IMPROVID"]);
 
         //INITIAL_DEV
         var initDeveloper = gisProject["INITIAL_DEV"];
         if (initDeveloper != null && initDeveloper.equalsIgnoreCase("YES")) {
-            editAppSpecific("Developer", "Initial");
+            editAppSpecificB("Developer", "Initial");
         } else {
-            editAppSpecific("Developer", "Subsequent");
+            editAppSpecificB("Developer", "Subsequent");
         }
 
         //TYPE & REIMBURSE
@@ -197,15 +201,15 @@ function updateProRata4Batch() {
         var reimburseMappedValue = REIMBURSE_MAP[reimburse];
 
         if (type != null && type.equalsIgnoreCase("WATER")) {
-            editAppSpecific("Pro Rata Water", "Yes");
-            editAppSpecific("Pro Rata Sewer", "No");
+            editAppSpecificB("Pro Rata Water", "Yes");
+            editAppSpecificB("Pro Rata Sewer", "No");
             if (reimburseMappedValue != null)
-                editAppSpecific("Water Reimbursement Type", reimburseMappedValue);
+                editAppSpecificB("Water Reimbursement Type", reimburseMappedValue);
         } else if (type != null && type.equalsIgnoreCase("SEWER")) {
-            editAppSpecific("Pro Rata Water", "No");
-            editAppSpecific("Pro Rata Sewer", "Yes");
+            editAppSpecificB("Pro Rata Water", "No");
+            editAppSpecificB("Pro Rata Sewer", "Yes");
             if (reimburseMappedValue != null)
-                editAppSpecific("Sewer Reimbursement Type", reimburseMappedValue);
+                editAppSpecificB("Sewer Reimbursement Type", reimburseMappedValue);
         }
 
     } else if (gisBufferArray.length > 1) {
@@ -218,21 +222,21 @@ function updateProRata4Batch() {
                 logDebug("**INFO Conn Fee Assess found init-dev=yes, updating ASIs...");
 
                 //has INIT_DEV = YES
-                editAppSpecific("Project Name", gisProject["IMPROVID"]);
-                editAppSpecific("Developer", "Initial");
+                editAppSpecificB("Project Name", gisProject["IMPROVID"]);
+                editAppSpecificB("Developer", "Initial");
 
                 //TYPE & REIMBURSE
                 var type = gisProject["TYPE"];
                 var reimburse = gisProject["REIMBURSE"];
                 var reimburseMappedValue = REIMBURSE_MAP[reimburse];
                 if (type != null && type.equalsIgnoreCase("WATER")) {
-                    editAppSpecific("Pro Rata Water", "Yes");
+                    editAppSpecificB("Pro Rata Water", "Yes");
                     if (reimburseMappedValue != null)
-                        editAppSpecific("Water Reimbursement Type", reimburseMappedValue);
+                        editAppSpecificB("Water Reimbursement Type", reimburseMappedValue);
                 } else if (type != null && type.equalsIgnoreCase("SEWER")) {
-                    editAppSpecific("Pro Rata Sewer", "Yes");
+                    editAppSpecificB("Pro Rata Sewer", "Yes");
                     if (reimburseMappedValue != null)
-                        editAppSpecific("Sewer Reimbursement Type", reimburseMappedValue);
+                        editAppSpecificB("Sewer Reimbursement Type", reimburseMappedValue);
                 }
 
             } //INIT_DEV
@@ -241,8 +245,8 @@ function updateProRata4Batch() {
         //multiple projects, none of them is INIT-DEV
         if (gisProject == null) {
             logDebug("**INFO Conn Fee Assess multiple projects, none of them is INIT-DEV");
-            editAppSpecific("Project Name", "");
-            editAppSpecific("Developer", "Subsequent");
+            editAppSpecificB("Project Name", "");
+            editAppSpecificB("Developer", "Subsequent");
         }
 
     } else {
@@ -250,50 +254,131 @@ function updateProRata4Batch() {
     } //single project
 }
 
-function editAppSpecificB(itemName,itemValue)  // optional: itemCap
+function proximityB(svc, layer, numDistance) // optional: distanceType
 {
-	var itemCap = capId;
-	var itemGroup = null;
-	if (arguments.length == 3) itemCap = arguments[2]; // use cap ID specified in args
-   	
-  	if (useAppSpecificGroupName)
-	{
-		if (itemName.indexOf(".") < 0)
-			{ logDebug("**WARNING: (editAppSpecific) requires group name prefix when useAppSpecificGroupName is true") ; return false }
-		
-		
-		itemGroup = itemName.substr(0,itemName.indexOf("."));
-		itemName = itemName.substr(itemName.indexOf(".")+1);
-	}
-   	// change 2/2/2018 - update using: aa.appSpecificInfo.editAppSpecInfoValue(asiField)
-	// to avoid issue when updating a blank custom form via script. It was wiping out the field alias 
-	// and replacing with the field name
-	
-	var asiFieldResult = aa.appSpecificInfo.getByList(itemCap, itemName);
-	if(asiFieldResult.getSuccess()){
-		var asiFieldArray = asiFieldResult.getOutput();
-		if(asiFieldArray.length > 0){
-			var asiField = asiFieldArray[0];
-			if(asiField){
-				var origAsiValue = asiField.getChecklistComment();
-				asiField.setChecklistComment(itemValue);
-	
-				var updateFieldResult = aa.appSpecificInfo.editAppSpecInfoValue(asiField);
-				if(updateFieldResult.getSuccess()){
-					logDebug("Successfully updated custom field: " + itemName + " with value: " + itemValue);
-					if(arguments.length < 3) //If no capId passed update the ASI Array
-					AInfo[itemName] = itemValue; 
-				}else
-				{ logDebug( "WARNING: (editAppSpecific) " + itemName + " was not updated. " + updateFieldResult.getErrorMessage()); }	
-			}
-			else
-			{ logDebug( "WARNING: (editAppSpecific) " + itemName + " was not updated."); }
-		}
-	}
-	else {
-		logDebug("ERROR: (editAppSpecific) " + asiFieldResult.getErrorMessage());
-	}
-} 
+    // returns true if the app has a gis object in proximity
+    // use with all events except ApplicationSubmitBefore
+    // 6/20/07 JHS - Changed errors to Warnings in case GIS server unavailable.
+
+    var distanceType = "feet"
+    if (arguments.length == 4) distanceType = arguments[3]; // use distance type in arg list
+
+    var bufferTargetResult = aa.gis.getGISType(svc, layer); // get the buffer target
+    if (bufferTargetResult.getSuccess()) {
+        var buf = bufferTargetResult.getOutput();
+        buf.addAttributeName(layer + "_ID");
+    } else {
+        logDebug("**WARNING: Getting GIS Type for Buffer Target.  Reason is: " + bufferTargetResult.getErrorType() + ":" + bufferTargetResult.getErrorMessage());
+        return false
+    }
+
+    var gisObjResult = aa.gis.getCapGISObjects(capId); // get gis objects on the cap
+    if (gisObjResult.getSuccess())
+        var fGisObj = gisObjResult.getOutput();
+    else {
+        logDebug("**WARNING: Getting GIS objects for Cap.  Reason is: " + gisObjResult.getErrorType() + ":" + gisObjResult.getErrorMessage());
+        return false
+    }
+
+    for (a1 in fGisObj) { // for each GIS object on the Cap
+        if (isPrimaryParcel(fGisObj[a1])) {
+            var bufchk = aa.gis.getBufferByRadius(fGisObj[a1], numDistance, distanceType, buf);
+
+            if (bufchk.getSuccess())
+                var proxArr = bufchk.getOutput();
+            else {
+                logDebug("**WARNING: Retrieving Buffer Check Results.  Reason is: " + bufchk.getErrorType() + ":" + bufchk.getErrorMessage());
+                return false
+            }
+
+            for (a2 in proxArr) {
+                var proxObj = proxArr[a2].getGISObjects(); // if there are GIS Objects here, we're done
+                if (proxObj.length) {
+                    return true;
+                }
+            }
+        }
+    }
+}
+
+function editAppSpecificB(itemName, itemValue) // optional: itemCap
+{
+    var itemCap = capId;
+    var itemGroup = null;
+    if (arguments.length == 3) itemCap = arguments[2]; // use cap ID specified in args
+
+    if (useAppSpecificGroupName) {
+        if (itemName.indexOf(".") < 0) {
+            logDebug("**WARNING: (editAppSpecific) requires group name prefix when useAppSpecificGroupName is true");
+            return false
+        }
+
+
+        itemGroup = itemName.substr(0, itemName.indexOf("."));
+        itemName = itemName.substr(itemName.indexOf(".") + 1);
+    }
+    // change 2/2/2018 - update using: aa.appSpecificInfo.editAppSpecInfoValue(asiField)
+    // to avoid issue when updating a blank custom form via script. It was wiping out the field alias 
+    // and replacing with the field name
+
+    var asiFieldResult = aa.appSpecificInfo.getByList(itemCap, itemName);
+    if (asiFieldResult.getSuccess()) {
+        var asiFieldArray = asiFieldResult.getOutput();
+        if (asiFieldArray.length > 0) {
+            var asiField = asiFieldArray[0];
+            if (asiField) {
+                var origAsiValue = asiField.getChecklistComment();
+                asiField.setChecklistComment(itemValue);
+
+                var updateFieldResult = aa.appSpecificInfo.editAppSpecInfoValue(asiField);
+                if (updateFieldResult.getSuccess()) {
+                    logDebug("Successfully updated custom field: " + itemName + " with value: " + itemValue);
+                    if (arguments.length < 3) //If no capId passed update the ASI Array
+                        AInfo[itemName] = itemValue;
+                } else {
+                    logDebug("WARNING: (editAppSpecific) " + itemName + " was not updated. " + updateFieldResult.getErrorMessage());
+                }
+            } else {
+                logDebug("WARNING: (editAppSpecific) " + itemName + " was not updated.");
+            }
+        }
+    } else {
+        logDebug("ERROR: (editAppSpecific) " + asiFieldResult.getErrorMessage());
+    }
+}
+
+function isPrimaryParcel(gis) {
+    var prcls = aa.parcel.getParcelByCapId(capId, aa.util.newQueryFormat());
+    if (prcls.getSuccess()) {
+        prcls = prcls.getOutput();
+
+        if (prcls.size > 1) {
+            for (var p = 0; p < prcls.size(); p++) {
+                if (prcls.get(p).getParcelNumber() == gis.getGISObjects()[0].gisId) {
+                    return prcls.get(p).getPrimaryParcelFlag() == 'Y';
+                }
+            }
+        } else {
+            return true;
+        }
+    }
+    return false;
+}
+
+function exploreObject(objExplore) {
+    aa.print("Methods:");
+    for (var x in objExplore) {
+        if (typeof (objExplore[x]) == "function")
+            aa.print("   " + x);
+    }
+
+    aa.print("");
+    aa.print("Properties:");
+    for (var y in objExplore) {
+        if (typeof (objExplore[y]) != "function")
+            aa.print("   " + y + " = " + objExplore[y]);
+    }
+}
 
 
 function elapsed() {
