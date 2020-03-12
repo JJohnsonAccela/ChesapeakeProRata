@@ -89,7 +89,7 @@ for (var i in recList) {
     if (!matches(cap.getCapStatus(), 'Withdrawn') && AInfo['Within Pro Rata Service Area'] != 'Yes') {
         var inProx = proximityB("CHESAPEAKE", "Pro Rata Projects - PU", -5, "feet");
 
-        if (inProx) {
+        if (!inProx && cap.isCompleteCap()) {
             updateProRata4Batch();
             updatedCount++;
         } else {
